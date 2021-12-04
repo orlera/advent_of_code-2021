@@ -11,7 +11,8 @@ defmodule V2021.Day4 do
   def solution_part2() do
     @input_file_part2
     |> parse_input()
-    # |> IO.inspect()
+    |> draw_numbers_p2(4)
+    |> IO.inspect()
   end
 
   # INPUT PARSING
@@ -44,7 +45,7 @@ defmodule V2021.Day4 do
     drawn_numbers = Enum.take(numbers, game_step)
 
     with {:ok, board} <- check_boards(boards, drawn_numbers, []) do
-      sum_unmarked_numbers(board, drawn_numbers) * Enum.at(drawn_numbers, -1)
+      compute_score(board, drawn_numbers)
     else
       _ -> draw_numbers(setup, game_step + 1)
     end
@@ -100,8 +101,25 @@ defmodule V2021.Day4 do
     end)
   end
 
-  def sum_unmarked_numbers(board, numbers) do
+  def compute_score(board, numbers) do
     board_numbers = List.flatten(board)
-    Enum.sum(board_numbers -- numbers)
+    Enum.sum(board_numbers -- numbers) * Enum.at(numbers, -1)
+  end
+
+  # PART2
+  def draw_numbers_p2({numbers, boards}, game_step) do
+    drawn_numbers = Enum.take(numbers, game_step)
+    left_boards = Enum.reject(boards, &board_completed(&1, drawn_numbers))
+
+    cond do
+      Enum.empty?(left_boards) -> compute_score(Enum.at(boards, 0), drawn_numbers)
+      true -> draw_numbers_p2({numbers, left_boards}, game_step + 1)
+    end
+  end
+
+  def board_completed(board, numbers) do
+    bingo_row = check_rows(board, numbers, [])
+    bingo_column = check_columns(board, numbers, [], 0)
+    Enum.any?(bingo_row) || Enum.any?(bingo_column)
   end
 end
