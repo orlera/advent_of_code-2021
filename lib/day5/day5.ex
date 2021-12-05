@@ -4,7 +4,7 @@ defmodule V2021.Day5 do
   def solution_part1() do
     @input_file_part1
     |> parse_input()
-    |> draw_lines(List.duplicate(0, 1000) |> List.duplicate(1000))
+    |> draw_lines(List.duplicate(0, 1000) |> List.duplicate(1000), false)
     |> List.flatten()
     |> Enum.count(fn el -> el > 1 end)
     |> IO.inspect()
@@ -13,7 +13,10 @@ defmodule V2021.Day5 do
   def solution_part2() do
     @input_file_part2
     |> parse_input()
-    # |> IO.inspect()
+    |> draw_lines(List.duplicate(0, 1000) |> List.duplicate(1000), true)
+    |> List.flatten()
+    |> Enum.count(fn el -> el > 1 end)
+    |> IO.inspect()
   end
 
   # INPUT PARSING
@@ -36,20 +39,20 @@ defmodule V2021.Day5 do
   end
 
   # PART 1
-  def draw_lines([], matrix), do: matrix
-  def draw_lines([current_line | lines], matrix) do
-    updated_matrix = maybe_update_matrix(matrix, current_line)
-    draw_lines(lines, updated_matrix)
+  def draw_lines([], matrix, _), do: matrix
+  def draw_lines([current_line | lines], matrix, diagonal) do
+    updated_matrix = maybe_update_matrix(matrix, current_line, diagonal)
+    draw_lines(lines, updated_matrix, diagonal)
   end
 
-  def maybe_update_matrix(matrix, {{x1, y1}, {x2, y2}}) when x1 == x2 do
+  def maybe_update_matrix(matrix, {{x1, y1}, {x2, y2}}, _) when x1 == x2 do
     matrix
     |> Enum.with_index(fn row, index ->
       List.replace_at(row, x1, maybe_increase(Enum.at(row, x1), [y1, index, y2] |> Enum.sort() |> Enum.at(1) == index))
     end)
   end
 
-  def maybe_update_matrix(matrix, {{x1, y1}, {x2, y2}}) when y1 == y2 do
+  def maybe_update_matrix(matrix, {{x1, y1}, {x2, y2}}, _) when y1 == y2 do
     new_row =
       matrix
       |> Enum.at(y1)
@@ -59,7 +62,20 @@ defmodule V2021.Day5 do
 
     List.replace_at(matrix, y1, new_row)
   end
-  def maybe_update_matrix(matrix, _), do: matrix
+
+  def maybe_update_matrix(matrix, {{x1, y1}, {x2, y2}}, diagonal) when x1 != x2 and abs((y1 - y2) / (x1 - x2)) == 1 and diagonal do
+    matrix
+    |> Enum.with_index(fn row, y_index ->
+      Enum.with_index(row, fn el, x_index ->
+        x_in_range = [x1, x_index, x2] |> Enum.sort() |> Enum.at(1) == x_index
+        y_in_range = [y1, y_index, y2] |> Enum.sort() |> Enum.at(1) == y_index
+        in_line = (x1 != x_index && abs((y1 - y_index) / (x1 - x_index)) == 1) || (x1 == x_index && y1 == y_index)
+        maybe_increase(el, x_in_range && y_in_range && in_line)
+      end)
+    end)
+  end
+
+  def maybe_update_matrix(matrix, _, _), do: matrix
 
   def maybe_increase(el, true), do: el+1
   def maybe_increase(el, false), do: el
