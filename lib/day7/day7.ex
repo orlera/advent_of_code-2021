@@ -66,5 +66,5 @@ defmodule V2021.Day7 do
     |> Enum.sum()
   end
 
-  def summation(n), do: Enum.sum(1..n)
+  def summation(n), do: div(n * n + n, 2)
 end
