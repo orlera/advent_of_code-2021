@@ -5,18 +5,14 @@ defmodule V2021.Day7 do
   def solution_part1() do
     @input_file_part1
     |> parse_input()
-    |> minmax()
-    |> simple_distances()
-    |> extract_least_expensive()
+    |> distance_to_median()
     |> IO.inspect()
   end
 
   def solution_part2() do
     @input_file_part2
     |> parse_input()
-    |> minmax()
-    |> summation_distances()
-    |> extract_least_expensive()
+    |> summation_distance_to_average()
     |> IO.inspect()
   end
 
@@ -29,41 +25,37 @@ defmodule V2021.Day7 do
   end
 
   # PART 1
-  def minmax(positions) do
-    {positions, Enum.min_max(positions)}
-  end
-
-  def simple_distances({positions, {min, max}}) do
-    min..max
-    |> Enum.map(&({&1, distance_for(positions, &1)}))
-  end
-
-  def distance_for(positions, target) do
+  def distance_to_median(positions) do
     positions
-    |> Enum.map(&abs(Kernel.-(&1, target)))
-    |> Enum.sum()
+    |> median()
+    |> compute_distance(positions)
   end
 
-  def extract_least_expensive(distances) do
-    distances
-    |> Enum.sort_by(& elem(&1, 1))
-    |> List.first()
-    |> elem(1)
+  def median(numbers) do
+    numbers
+    |> Enum.sort()
+    |> Enum.at(div(Enum.count(numbers), 2))
   end
+
+  def compute_distance(median, positions), do: Enum.reduce(positions, 0, fn pos, acc -> acc + abs(pos - median) end)
 
   # PART 2
-  def summation_distances({positions, {min, max}}) do
-    min..max
-    |> Enum.map(&({&1, summation_distance_for(positions, &1)}))
+  def summation_distance_to_average(positions) do
+    positions
+    |> avg()
+    |> compute_summation_distance(positions)
   end
 
-  def summation_distance_for(positions, target) do
-    positions
-    |> Enum.reduce(%{}, fn position, acc ->
-      Map.update(acc, abs(target-position), 1, &(&1+1))
-    end)
-    |> Enum.map(&(summation(elem(&1, 0)) * elem(&1, 1)))
+  def avg(numbers) do
+    numbers
     |> Enum.sum()
+    |> Kernel./(Enum.count(numbers))
+    |> trunc()
+  end
+
+  def compute_summation_distance(average, positions) do
+    positions
+    |> Enum.reduce(0, fn pos, acc -> acc + summation(abs(pos - average)) end)
   end
 
   def summation(n), do: div(n * n + n, 2)
