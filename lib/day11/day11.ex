@@ -16,8 +16,12 @@ defmodule V2021.Day11 do
   end
 
   def solution_part2() do
-    @input_file_part2
-    |> parse_input()
+    grid =
+      @input_file_part2
+      |> parse_input()
+    {grid, 0}
+    |> step_p2(1)
+    |> IO.inspect()
   end
 
   # INPUT PARSING
@@ -147,4 +151,19 @@ defmodule V2021.Day11 do
   end
 
   def octopus_at(grid, x, y), do: Enum.at(grid, y) |> Enum.at(x)
+
+  # PART 2
+  def step_p2({octopus_grid, _} = octopus_info, step) do
+    cond do
+      all_flashing(octopus_grid) ->
+        step - 1
+      true ->
+        octopus_info
+        |> gain_energy()
+        |> flash()
+        |> step_p2(step + 1)
+    end
+  end
+
+  def all_flashing(grid), do: grid |> List.flatten() |> Enum.sum() |> IO.inspect(label: "flashes")  == 0
 end
