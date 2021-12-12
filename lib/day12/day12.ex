@@ -13,6 +13,9 @@ defmodule V2021.Day12 do
   def solution_part2() do
     @input_file_part2
     |> parse_input()
+    |> build_cave_graph()
+    |> count_paths_p2_for("start", MapSet.new(), false)
+    |> IO.inspect()
   end
 
   # INPUT PARSING
@@ -44,11 +47,27 @@ defmodule V2021.Day12 do
   def count_paths_for(map, source, visited, small) do
     cond do
       small && MapSet.member?(visited, source) -> 0
-      true ->
-        map
-        |> Map.get(source)
-        |> Enum.map(fn target -> count_paths_for(map, target, MapSet.put(visited, source), Regex.match?(~r/[a-z]/, target)) end)
-        |> Enum.sum()
+      true -> visit_and_iterate(map, source, visited, source)
     end
+  end
+
+  # PART 2
+  def count_paths_p2_for(_, "end", _, _), do: 1
+  def count_paths_p2_for(map, source, visited, small) do
+    case small && MapSet.member?(visited, source) do
+      true ->
+        case MapSet.member?(visited, :second_visit) do
+          true -> 0
+          false -> visit_and_iterate(map, source, visited, :second_visit, &count_paths_p2_for/4)
+        end
+      false -> visit_and_iterate(map, source, visited, source, &count_paths_p2_for/4)
+    end
+  end
+
+  def visit_and_iterate(map, source, visited_list, last_visited, iter_fun \\ &count_paths_for/4) do
+    map
+    |> Map.get(source)
+    |> Enum.map(fn target -> iter_fun.(map, target, MapSet.put(visited_list, last_visited), Regex.match?(~r/[a-z]/, target)) end)
+    |> Enum.sum()
   end
 end
