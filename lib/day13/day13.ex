@@ -14,6 +14,10 @@ defmodule V2021.Day13 do
   def solution_part2() do
     @input_file_part2
     |> parse_input()
+    |> fold_all()
+    |> Enum.uniq()
+    |> plot()
+    |> IO.inspect()
   end
 
   # INPUT PARSING
@@ -65,4 +69,37 @@ defmodule V2021.Day13 do
 
   def fold_y_point({_, y} = point, position) when y < position, do: point
   def fold_y_point({x, y}, position), do: {x, position * 2 - y}
+
+  # PART 2
+  def fold_all({points, folds}), do: Enum.reduce(folds, points, &fold/2)
+
+  def plot(points) do
+   {max_x, max_y} = find_vertex(points)
+   List.duplicate("o", max_x + 1)
+   |> List.duplicate(max_y + 1)
+   |> mark_points(points)
+   |> Enum.map(&Enum.join/1)
+  end
+
+  def mark_points(matrix, points) do
+    matrix
+    |> Enum.with_index(& {&2, &1})
+    |> Enum.map(fn {y, row} ->
+      row
+      |> Enum.with_index(& {&2, &1})
+      |> Enum.map(fn {x, _} ->
+        cond do
+          Enum.member?(points, {x, y}) -> "x"
+          true -> "."
+        end
+      end)
+    end)
+  end
+
+  def find_vertex(points) do
+    {
+      Enum.max(points, fn {x1, _}, {x2, _} -> x1 >= x2 end) |> elem(0),
+      Enum.max(points, fn {_, y1}, {_, y2} -> y1 >= y2 end) |> elem(1)
+    }
+  end
  end
