@@ -1,26 +1,23 @@
 defmodule V2021.Day14 do
   @input_file_part1 "lib/day14/input.txt"
   @input_file_part2 "lib/day14/input.txt"
-  @step1_goal 10
-  @step2_goal 40
+  @goal1 10
+  @goal2 40
 
   def solution_part1() do
     @input_file_part1
     |> parse_input()
-    |> step(0, @step1_goal)
-    |> compute_score()
+    |> solve(@goal1)
     |> IO.inspect()
   end
 
   def solution_part2() do
     @input_file_part2
     |> parse_input()
-    |> step(0, @step2_goal)
-    |> compute_score()
+    |> solve(@goal2)
     |> IO.inspect()
   end
 
-  # INPUT PARSING
   def parse_input(input) do
     input
     |> File.read!()
@@ -29,9 +26,10 @@ defmodule V2021.Day14 do
     |> parse_instructions()
   end
 
+  # INPUT PARSING
   def parse_instructions({template, raw_instructions}) do
     {
-      template,
+      String.graphemes(template),
       raw_instructions
       |> String.split("\n")
       |> Enum.map(&parse_instruction/1)
@@ -45,27 +43,40 @@ defmodule V2021.Day14 do
     |> List.to_tuple()
   end
 
-  # PART 1
-  def step(input, step, step_goal) when step == step_goal, do: input
-  def step({pattern, _} = input, step, step_goal) do
-    input
-    |> instertions(String.slice(pattern, 0..0))
-    |> step(step + 1, step_goal)
+  # SOLUTION
+  def solve({polymer, pair_rules}, goal) do
+    1..goal
+    |> Enum.reduce(polymer |> pairs(), fn _step, pairs -> grow(pairs, pair_rules) end)
+    |> frequencies(polymer)
+    |> Map.values()
+    |> Enum.min_max()
+    |> then(fn {min, max} -> max - min end)
   end
 
-  def instertions({<<first::utf8>> <> <<second::utf8>> <> rest, instructions}, output), do: instertions({<<second::utf8>> <> rest, instructions}, output <> Map.get(instructions, <<first::utf8>><><<second::utf8>>, "") <> <<second::utf8>>)
-  def instertions({_, instructions}, output), do: {output, instructions}
-
-  def compute_score({output, _}) do
-    output
-    |> String.graphemes()
+  def pairs(polymer) do
+    polymer
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map(&Enum.join/1)
     |> Enum.frequencies()
-    |> min_max()
-    |> Enum.sum()
   end
 
-  def min_max(frequencies) do
-    min_max = Enum.min_max_by(frequencies, &(elem(&1, 1)))
-    [min_max |> elem(1) |> elem(1), -(min_max |> elem(0) |> elem(1))]
+  def grow(pairs, pair_rules) do
+    Enum.reduce(pairs, %{}, fn {pair, current_amount}, acc ->
+      [first, last] = String.graphemes(pair)
+      medial = pair_rules[pair]
+
+      acc
+      |> Map.update(first <> medial, current_amount, &(&1 + current_amount))
+      |> Map.update(medial <> last, current_amount, &(&1 + current_amount))
+    end)
+  end
+
+  def frequencies(pairs, initial_polymer) do
+    last = List.last(initial_polymer)
+
+    Enum.reduce(pairs, %{last => 1}, fn {pair, count}, acc ->
+      [first, _] = String.graphemes(pair)
+      Map.update(acc, first, count, fn c -> c + count end)
+    end)
   end
 end
